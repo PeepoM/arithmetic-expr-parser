@@ -70,3 +70,31 @@ spaces :: Parser String
 spaces = many $ satisfy isSpace
 
 --------------------
+
+-- Grammar for the expression parser
+
+-- expr ::= ter + expr | term - expr | term
+-- term ::= factor * term | factor / term | factor
+-- factor ::= (expr) | int
+-- int ::= ... | -1 | 0 | 1 | ...
+
+parseExpr :: Parser Int
+parseExpr =
+  liftA2 (+) parseTerm (char '+' *> parseExpr)
+    <|> liftA2 (-) parseTerm (char '-' *> parseExpr)
+    <|> parseTerm
+
+parseTerm :: Parser Int
+parseTerm =
+  liftA2 (*) parseFactor (char '*' *> parseTerm)
+    <|> liftA2 div parseFactor (char '/' *> parseTerm)
+    <|> parseFactor
+
+parseFactor :: Parser Int
+parseFactor = char '(' *> parseExpr <* char ')' <|> int
+
+eval :: String -> Int
+eval s = case runParser parseExpr (filter (not . isSpace) s) of
+  Just (x, []) -> x
+  Just (x, xs) -> error ("Didn't parse the expression: " ++ xs)
+  Nothing -> error "Parser failed!"
