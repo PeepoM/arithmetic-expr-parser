@@ -1,5 +1,7 @@
 module Parser where
 
+import Control.Applicative
+
 newtype Parser a = Parser {runParser :: String -> Maybe (a, String)}
 
 first :: (a -> c) -> (a, b) -> (c, b)
@@ -13,3 +15,7 @@ instance Applicative Parser where
   p1 <*> p2 = Parser $ \s -> case runParser p1 s of
     Nothing -> Nothing
     Just (f, fs) -> runParser (f <$> p2) fs
+
+instance Alternative Parser where
+  empty = Parser $ const Nothing
+  Parser p1 <|> Parser p2 = Parser $ (<|>) <$> p1 <*> p2
